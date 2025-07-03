@@ -43,7 +43,8 @@ INSTALLED_APPS = [
 
     #packegs
     'rest_framework',
-#     local app
+    'rest_framework_simplejwt',
+    #local app
     'shared',
     'users'
 ]
