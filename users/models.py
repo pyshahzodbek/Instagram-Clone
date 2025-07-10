@@ -51,7 +51,7 @@ class Users(AbstractUser,BaseModels):
         return self.username
     def create_verify_code(self,verify_type):
         code = "".join([str(random.randint(0, 9)) for _ in range(4)])
-        UserConfermation.objects.create(
+        UserConfirmation.objects.create(
             user_id=self.id,
             verify_type=verify_type,
             code=code
@@ -59,10 +59,10 @@ class Users(AbstractUser,BaseModels):
         return code
     def check_username(self):
         if not self.username:
-            temp_username=f"instagram-{uuid.uuid4().__str__().split("-")[-1]}"
-        while Users.objects.filter(username=temp_username):
-            temp_username=f"{temp_username}{random.randint(0,9)}"
-        self.username=temp_username
+            temp_username = f'instagram-{uuid.uuid4().__str__().split("-")[-1]}'  # instagram-23324fsdf
+            while Users.objects.filter(username=temp_username):
+                temp_username = f"{temp_username}{random.randint(0, 9)}"
+            self.username = temp_username
 
     def check_email(self):
         if self.email:
@@ -92,8 +92,8 @@ class Users(AbstractUser,BaseModels):
         self.hashing_password()
 
     def save(self,*args,**kwargs):
-        if not self.pk:
-            self.clean()
+
+        self.clean()
         super(Users,self).save(*args,**kwargs)
 
 
@@ -106,7 +106,7 @@ class Users(AbstractUser,BaseModels):
 PHONE_EXPRE=2
 EMAIL_EXPRE=5
 
-class UserConfermation(BaseModels):
+class UserConfirmation(BaseModels):
     TYPE_CHOISE=(
         (VIA_EMAIL,VIA_EMAIL),
         (VIA_PHONE,VIA_PHONE)
@@ -128,6 +128,6 @@ class UserConfermation(BaseModels):
             else:
                 self.expiration_time=datetime.now()+timedelta(minutes=PHONE_EXPRE)
 
-        super(UserConfermation,self).save(*args,**kwargs)
+        super(UserConfirmation,self).save(*args,**kwargs)
 
 
