@@ -1,18 +1,27 @@
 import re
 import threading
 from django.core.mail import EmailMessage
+import phonenumbers
+from decouple import config
 
 from django.template.loader import render_to_string
-from rest_framework.exceptions import ValidationError  # agar DRF bo'lsa
+from rest_framework.exceptions import ValidationError
+from twilio.rest import Client
 
 email_regex = re.compile(r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$")
-phone_regex = re.compile(r"^\+?[1-9]\d{9,14}$")  # +998901234567 kabi formatga mos
+phone_regex = re.compile(r"(\+[0-9]+\s*)?(\([0-9]+\))?[\s0-9\-]+[0-9]+")
 
-def check_email_or_phone(email_or_phone):
-    if re.fullmatch(email_regex, email_or_phone):
+def check_email_or_phone(email_phone_number):
+
+    if re.fullmatch(email_regex, email_phone_number):
         return 'via_email'
-    elif re.fullmatch(phone_regex, email_or_phone):
-        return 'via_phone'
+    try:
+        phone_number = phonenumbers.parse(email_phone_number, None)
+        if phonenumbers.is_valid_number(phone_number):
+             return 'via_phone'
+    except phonenumbers.NumberParseException:
+        pass
+
     else:
         data = {
             "success": False,
@@ -56,5 +65,17 @@ def send_email(email, code):
             "content_type": "html"
         }
     )
+
+
+def send_phone_code(phone,code):
+    account_sid=config('account_sid')
+    auth_token=config('auth_token')
+    client = Client(account_sid, auth_token)
+    message = client.messages.create(
+        body=f"Your verification code is {code}",
+        from_='+14155238886',
+        to=phone
+    )
+
 
 

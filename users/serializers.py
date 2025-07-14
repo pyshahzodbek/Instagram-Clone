@@ -1,5 +1,5 @@
 from rest_framework import  serializers
-from shared.unitily import check_email_or_phone, send_email
+from shared.unitily import check_email_or_phone, send_email, send_phone_code
 from .models import UserConfirmation,Users,VIA_EMAIL,VIA_PHONE,CODE_VEFIRED,NEWS,DONE,PHOTO_STEP
 from rest_framework import exceptions
 from django.db.models import Q
@@ -33,7 +33,8 @@ class SignUpSerializers(serializers.ModelSerializer):
           send_email(user.email,code)
       elif user.auth_type==VIA_PHONE:
           code=user.create_verify_code(VIA_PHONE)
-          # send_phone_code(uers.phone_number,code)
+          # send_phone_code(user.phone_number,code)
+          send_email(user.phone_number,code)
       user.save()
       return user
 
@@ -49,7 +50,7 @@ class SignUpSerializers(serializers.ModelSerializer):
 
     @staticmethod
     def auth_validate(data):
-        print(data)
+
         user_input=str(data.get('email_phone_number')).lower()
         input_type=check_email_or_phone(user_input)
         if input_type==VIA_EMAIL:
@@ -68,5 +69,28 @@ class SignUpSerializers(serializers.ModelSerializer):
                 'message':'invalid email or phone number'
             }
             raise ValidationError(data)
+
+        return data
+
+
+    def validate_email_phone_number(self,value):
+        value=value.lower()
+        if value and Users.objects.filter(email=value).exists():
+            data={
+                "success":False,
+                'message':'Bu email malumotlar bazasida mavjud!'
+            }
+            raise ValidationError(data)
+        elif value and Users.objects.filter(phone_number=value).exists():
+            data={
+                "success":False,
+                'message':'Bu telefon raqam malumotlar bazasida mavjud!'
+            }
+            raise ValidationError(data)
+        return value
+
+    def to_representation(self, instance):
+        data = super(SignUpSerializers, self).to_representation(instance)
+        data.update(instance.token())
 
         return data

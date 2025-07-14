@@ -1,8 +1,9 @@
 from django.urls import path
 from .serializers import SignUpSerializers
-from .views import CreateApiView
+from .views import CreateApiView,VerifyApiView
 
 
 urlpatterns=[
-    path('signup/',CreateApiView.as_view())
+    path('signup/',CreateApiView.as_view()),
+    path('verify/',VerifyApiView.as_view()),
 ]

@@ -92,7 +92,6 @@ class Users(AbstractUser,BaseModels):
         self.hashing_password()
 
     def save(self,*args,**kwargs):
-
         self.clean()
         super(Users,self).save(*args,**kwargs)
 
@@ -122,10 +121,10 @@ class UserConfirmation(BaseModels):
         return str(self.user.__str__())
 
     def save(self,*args,**kwargs):
-        if not self.pk:
-            if self.verify_type==VIA_EMAIL:
+
+        if self.verify_type==VIA_EMAIL:
                 self.expiration_time=datetime.now()+timedelta(minutes=EMAIL_EXPRE)
-            else:
+        else:
                 self.expiration_time=datetime.now()+timedelta(minutes=PHONE_EXPRE)
 
         super(UserConfirmation,self).save(*args,**kwargs)
