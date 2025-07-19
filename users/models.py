@@ -61,7 +61,7 @@ class Users(AbstractUser,BaseModels):
         if not self.username:
             temp_username = f'instagram-{uuid.uuid4().__str__().split("-")[-1]}'  # instagram-23324fsdf
             while Users.objects.filter(username=temp_username):
-                temp_username = f"{temp_username}{random.randint(0, 9)}"
+                temp_username = f"{temp_username}{random.randint(0, 1000)}"
             self.username = temp_username
 
     def check_email(self):
@@ -114,7 +114,7 @@ class UserConfirmation(BaseModels):
     verify_type=models.CharField(max_length=31,choices=TYPE_CHOISE)
     user=models.ForeignKey('users.Users',models.CASCADE,related_name='verify_code')
     expiration_time=models.DateTimeField(null=True)
-    is_confirned=models.BooleanField(default=False)
+    is_confirmed=models.BooleanField(default=False)
 
 
     def __str__(self):
