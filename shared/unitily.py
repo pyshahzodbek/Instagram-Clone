@@ -10,6 +10,7 @@ from twilio.rest import Client
 
 email_regex = re.compile(r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$")
 phone_regex = re.compile(r"(\+[0-9]+\s*)?(\([0-9]+\))?[\s0-9\-]+[0-9]+")
+username_regex=re.compile(r"^[a-zA-Z0-9_.-]+$")
 
 def check_email_or_phone(email_phone_number):
 
@@ -28,6 +29,29 @@ def check_email_or_phone(email_phone_number):
             "message": "Email yoki telefon noto‘g‘ri"
         }
         raise ValidationError(data)
+def check_auth_type(user_input):
+    if re.fullmatch(email_regex,user_input):
+        return "email"
+
+    elif re.fullmatch(username_regex,user_input):
+        return "username"
+    try:
+        phone_number = phonenumbers.parse(user_input, None)
+        if phonenumbers.is_valid_number(phone_number):
+             return 'phone'
+    except phonenumbers.NumberParseException:
+        pass
+
+    else:
+        data={
+            "success":False,
+            "message":"Email , Username yoki telefon noto'g'ri!"
+        }
+        raise ValidationError(data)
+
+
+
+
 
 class EmailThread(threading.Thread):
 

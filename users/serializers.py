@@ -1,6 +1,9 @@
 from django.contrib.auth.password_validation import validate_password
+from django.core.validators import FileExtensionValidator
 from rest_framework import  serializers
-from shared.unitily import check_email_or_phone, send_email, send_phone_code
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+
+from shared.unitily import check_email_or_phone, send_email, send_phone_code, check_auth_type
 from .models import UserConfirmation,Users,VIA_EMAIL,VIA_PHONE,CODE_VEFIRED,NEWS,DONE,PHOTO_STEP
 from rest_framework import exceptions
 from django.db.models import Q
@@ -166,17 +169,59 @@ class ChangeUserInformation(serializers.Serializer):
         return last_name
 
     def update(self, instance, validated_data):
-
         instance.first_name = validated_data.get('first_name', instance.first_name)
         instance.last_name = validated_data.get('last_name', instance.last_name)
-        instance.password = validated_data.get('password', instance.password)
         instance.username = validated_data.get('username', instance.username)
+        password=validated_data.get("password",None)
         if validated_data.get('password'):
             instance.set_password(validated_data.get('password'))
         if instance.auth_status == CODE_VEFIRED:
             instance.auth_status = DONE
         instance.save()
         return instance
+
+
+class ChangePhotoSerializers(serializers.Serializer):
+    photo=serializers.ImageField(validators=[FileExtensionValidator(allowed_extensions=('jpg','jpeg','png','heic','heif'))])
+
+    def update(self, instance, validated_data):
+        photo=validated_data.get('photo')
+        if photo:
+            instance.photo=photo
+            instance.auth_status=PHOTO_STEP
+            instance.save()
+        return instance
+
+
+
+class LoginSerializers(TokenObtainPairSerializer):
+   def __init__(self,*args,**kwargs):
+       super(LoginSerializers,self).__init__(*args,**kwargs)
+       self.fields["user_input"]=serializers.CharField(required=True)
+       self.fields["username"]=serializers.CharField(required=False,read_only=True)
+
+   def auth_validate(self,data):
+       user_input=data.get('user_input')
+       if check_auth_type(user_input)=="username":
+           username=user_input
+       elif check_auth_type(user_input)=="email":
+           user=Users.objects.get(email__iaxact=user_input)
+           username=user.username
+       elif check_auth_type(user_input)=='phone':
+           user=Users.objects.get(phone_number=user_input)
+           username=user.username
+       else:
+           data={
+               "success":False,
+               "message":"Siz email, username, telefon raqam kiritishingiz kerak!"
+
+           }
+           raise ValidationError(data)
+
+       authentication_kwargs = {
+           self.username_field: username,
+           'password': data['password']
+       }
 
 
 

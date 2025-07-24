@@ -8,7 +8,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from shared.unitily import send_email
-from .serializers import SignUpSerializers, ChangeUserInformation
+from .serializers import SignUpSerializers, ChangeUserInformation,ChangePhotoSerializers
 from .models import Users, NEWS, CODE_VEFIRED, VIA_EMAIL,VIA_PHONE
 
 
@@ -114,5 +114,21 @@ class ChangeUserInformationView(UpdateAPIView):
             "message": "Malumotlar muvaffaqiyatli o'zgartirildi",
             "auth_status": self.request.user.auth_status        }
         return Response(data, status=200)
+
+class ChangePhotoUserView(APIView):
+    permission_classes = [IsAuthenticated,]
+
+
+    def put(self,request,*args,**kwargs):
+        serializer=ChangePhotoSerializers(data=request.data)
+        if serializer.is_valid():
+            user=request.user
+            serializer.update(user,serializer.validated_data)
+            return Response({
+                "message":"Rasm muvafaqiyatli uzgartirildi"
+            } ,status=200)
+        return Response(
+            serializer.errors,status=400
+        )
 
 
