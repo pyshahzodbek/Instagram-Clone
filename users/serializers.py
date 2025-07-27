@@ -1,3 +1,4 @@
+from django.contrib.auth import authenticate
 from django.contrib.auth.password_validation import validate_password
 from django.core.validators import FileExtensionValidator
 from rest_framework import  serializers
@@ -7,8 +8,7 @@ from shared.unitily import check_email_or_phone, send_email, send_phone_code, ch
 from .models import UserConfirmation,Users,VIA_EMAIL,VIA_PHONE,CODE_VEFIRED,NEWS,DONE,PHOTO_STEP
 from rest_framework import exceptions
 from django.db.models import Q
-from  rest_framework.exceptions import ValidationError
-
+from rest_framework.exceptions import ValidationError, PermissionDenied
 
 
 class SignUpSerializers(serializers.ModelSerializer):
@@ -205,10 +205,10 @@ class LoginSerializers(TokenObtainPairSerializer):
        if check_auth_type(user_input)=="username":
            username=user_input
        elif check_auth_type(user_input)=="email":
-           user=Users.objects.get(email__iaxact=user_input)
+           user=self.get_user(email__iexact=user_input)
            username=user.username
        elif check_auth_type(user_input)=='phone':
-           user=Users.objects.get(phone_number=user_input)
+           user=self.get_user(phone_number=user_input)
            username=user.username
        else:
            data={
@@ -222,6 +222,43 @@ class LoginSerializers(TokenObtainPairSerializer):
            self.username_field: username,
            'password': data['password']
        }
+
+       current_user=Users.objects.filter(username__iexact=username).first()
+       if current_user is not None and current_user.auth_status in ['NEWS','CODE_VEFIRED']:
+           data={
+               "success":False,
+               "message":"Siz hai tuliq ruyxatdan utmagansiz!"
+           }
+           raise ValidationError(data)
+
+       user=authenticate(**authentication_kwargs)
+       if user is not None:
+           self.user=user
+       else:
+           data={
+               "success":False,
+               "message":"Kechirasiz kiritilgan login yoki parol xato.Qaytadan urinib kuring!"
+           }
+           raise ValidationError(data)
+
+   def validate(self,data):
+       self.auth_validate(data)
+       if self.user.auth_status not in [DONE,PHOTO_STEP]:
+           raise PermissionDenied("Siz login qila olmaysiz!")
+       data=self.user.token()
+       data["auth_status"]=self.user.auth_status
+       data["full_name"]=self.user.full_name
+
+       return data
+   def get_user(self,**kwargs):
+       users=Users.objects.filter(**kwargs)
+       if not users.exists():
+           raise ValidationError(
+               {
+                   "message":"No active account found!"
+               }
+           )
+       return users.first()
 
 
 

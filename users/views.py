@@ -1,14 +1,16 @@
 from datetime import datetime
 
+
 from rest_framework import permissions
 from rest_framework.exceptions import ValidationError
 from rest_framework.generics import CreateAPIView, UpdateAPIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework_simplejwt.views import TokenObtainPairView
 
 from shared.unitily import send_email
-from .serializers import SignUpSerializers, ChangeUserInformation,ChangePhotoSerializers
+from .serializers import SignUpSerializers, ChangeUserInformation,ChangePhotoSerializers,LoginSerializers
 from .models import Users, NEWS, CODE_VEFIRED, VIA_EMAIL,VIA_PHONE
 
 
@@ -130,5 +132,9 @@ class ChangePhotoUserView(APIView):
         return Response(
             serializer.errors,status=400
         )
+
+class LoginVieW(TokenObtainPairView):
+    serializer_class=LoginSerializers
+
 
 
