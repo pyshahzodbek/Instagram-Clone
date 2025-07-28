@@ -1,8 +1,11 @@
 from django.contrib.auth import authenticate
+from django.contrib.auth.models import update_last_login
 from django.contrib.auth.password_validation import validate_password
 from django.core.validators import FileExtensionValidator
 from rest_framework import  serializers
-from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from rest_framework.generics import get_object_or_404
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer, TokenRefreshSerializer
+from rest_framework_simplejwt.tokens import AccessToken
 
 from shared.unitily import check_email_or_phone, send_email, send_phone_code, check_auth_type
 from .models import UserConfirmation,Users,VIA_EMAIL,VIA_PHONE,CODE_VEFIRED,NEWS,DONE,PHOTO_STEP
@@ -259,6 +262,18 @@ class LoginSerializers(TokenObtainPairSerializer):
                }
            )
        return users.first()
+
+class LoginRefreshSerializers(TokenRefreshSerializer):
+    def validate(self, attrs):
+        data = super().validate(attrs)
+        access_token_instance = AccessToken(data['access'])
+        user_id = access_token_instance['user_id']
+        user = get_object_or_404(Users, id=user_id)
+        update_last_login(None, user)
+        return data
+
+class LogoutSerializers(serializers.Serializer):
+    refresh=serializers.CharField()
 
 
 
