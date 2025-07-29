@@ -11,7 +11,7 @@ from shared.unitily import check_email_or_phone, send_email, send_phone_code, ch
 from .models import UserConfirmation,Users,VIA_EMAIL,VIA_PHONE,CODE_VEFIRED,NEWS,DONE,PHOTO_STEP
 from rest_framework import exceptions
 from django.db.models import Q
-from rest_framework.exceptions import ValidationError, PermissionDenied
+from rest_framework.exceptions import ValidationError, PermissionDenied, NotFound
 
 
 class SignUpSerializers(serializers.ModelSerializer):
@@ -276,6 +276,53 @@ class LogoutSerializers(serializers.Serializer):
     refresh=serializers.CharField()
 
 
+
+class ForgotPasswordSerializer(serializers.Serializer):
+    email_or_phone = serializers.CharField(write_only=True, required=True)
+
+    def validate(self, attrs):
+        email_or_phone = attrs.get('email_or_phone', None)
+        if email_or_phone is None:
+            raise ValidationError(
+                {
+                    "success": False,
+                    'message': "Email yoki telefon raqami kiritilishi shart!"
+                }
+            )
+        user = Users.objects.filter(Q(phone_number=email_or_phone) | Q(email=email_or_phone))
+        if not user.exists():
+            raise NotFound(detail="User not found")
+        attrs['user'] = user.first()
+        return attrs
+
+class ResetPasswordSerializers(serializers.ModelSerializer):
+    id=serializers.UUIDField(read_only=True)
+    password=serializers.CharField(min_length=8,required=True,write_only=True)
+    confirm_password=serializers.CharField(min_length=8,required=True,write_only=True)
+
+    class Meta:
+        model=Users
+        fields=(
+            "id","password","confirm_password"
+        )
+
+    def validate(self,data):
+        password=data.get('password',None)
+        confirm_password=data.get('confirm_password',None)
+        if password!=confirm_password:
+            data={
+                "message":"Kiritgan parolingiz bir biriga teng emas"
+            }
+            raise  ValidationError(data)
+        if password:
+            validate_password(password)
+        return data
+
+    def update(self, instance, validated_data):
+        password=validated_data.pop('password')
+        instance.set_password(password)
+        super().update(instance,validated_data)
+        return instance
 
 
 
