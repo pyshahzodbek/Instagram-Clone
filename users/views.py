@@ -26,8 +26,6 @@ class VerifyApiView(APIView):
     permission_classes = (IsAuthenticated,)
 
     def post(self, request, *args, **kwargs):
-        print(f"user: {request.user}")
-        print(f"code: {request.data.get('code')}")
         user=request.user
         code=request.data.get('code')
 

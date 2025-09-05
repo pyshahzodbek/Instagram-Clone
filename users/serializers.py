@@ -48,7 +48,7 @@ class SignUpSerializers(serializers.ModelSerializer):
 
 
     def validate(self,data):
-        super(SignUpSerializers,self).validate(data)
+        data=super(SignUpSerializers,self).validate(data)
         data=self.auth_validate(data)
         return data
 
