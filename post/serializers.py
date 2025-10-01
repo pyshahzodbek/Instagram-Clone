@@ -50,8 +50,6 @@ class PostSerializers(serializers.ModelSerializer):
         return False
 
 class PostCommentSerializers(serializers.ModelSerializer):
-
-
     id= serializers.UUIDField(read_only=True)
     author=UserSerializers(read_only=True)
     replies=serializers.SerializerMethodField("get_replies")
@@ -61,6 +59,7 @@ class PostCommentSerializers(serializers.ModelSerializer):
         model=PostComment
         fields=('id',
                 'author',
+                "post",
                 'comment',
                 'parent',
                 'created_time',
@@ -72,7 +71,7 @@ class PostCommentSerializers(serializers.ModelSerializer):
 
     def get_replies(self,obj):
         if obj.child.exists():
-            serializers=self.__class__(obj.child.all(),many=True)
+            serializers=self.__class__(obj.child.all(),many=True,context=self.context)
             return serializers.data
         else:
             return None
