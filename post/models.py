@@ -39,25 +39,27 @@ class PostComment(BaseModels):
         return f"comment by {self.author}"
 
 class PostLike(BaseModels):
-    author=models.ForeignKey(Users,on_delete=models.CASCADE)
-    post=models.ForeignKey(Post,on_delete=models.CASCADE,related_name='likes')
+    author = models.ForeignKey(Users, on_delete=models.CASCADE)
+    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='likes')
+
     class Meta:
-        UniqueConstraint(
-            fields=['author','post'],
-            name='PostLikeUnique'
-                       )
+        constraints = [
+            models.UniqueConstraint(fields=['author', 'post'], name='PostLikeUnique')
+        ]
 
 
 
 class CommentLike(BaseModels):
-    author=models.ForeignKey(Users,on_delete=models.CASCADE)
-    comment=models.ForeignKey(PostComment,on_delete=models.CASCADE,related_name='likes')
+    author = models.ForeignKey(Users, on_delete=models.CASCADE)
+    comment = models.ForeignKey(PostComment, on_delete=models.CASCADE, related_name='likes')
+
     class Meta:
-        UniqueConstraint(
-            fields=['author','comment'],
-            name='CommentLikeUnique'
-                        )
+        constraints = [
+            models.UniqueConstraint(fields=['author', 'comment'], name='CommentLikeUnique')
+        ]
+
     def __str__(self):
         return f'{self.author} {self.comment}'
+
 
 

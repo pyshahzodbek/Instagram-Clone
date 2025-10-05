@@ -4,6 +4,7 @@ from rest_framework import generics
 from rest_framework.permissions import AllowAny,IsAuthenticatedOrReadOnly,IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.status import HTTP_200_OK, HTTP_204_NO_CONTENT
+from rest_framework.views import APIView
 
 from .models import Post, PostComment, PostLike, CommentLike
 from .serializers import PostSerializers,PostLikeSerializers,PostCommentSerializers,CommentLikeSerializers
@@ -105,4 +106,56 @@ class LikesApiView(generics.ListAPIView):
     permission_classes = [AllowAny,]
     queryset = PostLike.objects.all()
     pagination_class = CustomPagination
+
+class PostLIkeApiView(APIView):
+
+    def post(self,request,pk):
+
+        try:
+            post_like=PostLike.objects.create(
+                author=self.request.user,
+                post_id=pk
+            )
+            serializer = PostLikeSerializers(post_like)
+            data=\
+                {
+                    "success": True,
+                    "message": "Like muvafaqiyatli bosildi!",
+                    "data": serializer.data,
+                }
+
+
+            return Response(data)
+
+
+        except Exception as e:
+            data={
+                "success":False,
+                "message":f"{str(e)}"
+            }
+            return Response(data,status=400)
+
+
+    def delete(self,request,pk):
+
+        try:
+            post_like=PostLike.objects.get(
+                author=self.request.user,
+                post_id=pk
+            )
+            post_like.delete()
+            data={
+                "success":True,
+                "message":"Like muvafaqiyatli uchirildi!",
+                "data":None
+            }
+            return Response(data,status=204)
+        except Exception as e:
+            data = {
+                "success": False,
+                "message": f"{str(e)}"
+            }
+            return Response(data,status=400)
+
+
 
