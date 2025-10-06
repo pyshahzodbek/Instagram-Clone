@@ -99,12 +99,9 @@ instagram-clone/
 ## 👨‍💻 Muallif
 
 **Shahzod Ravshanov**  
-📧 [Email]  
+📧 [shahzodravshanov1234@gmail.com]  
 💻 Backend Developer (Django / DRF / Python)
 
 ---
 
-## 🧾 Litsenziya
 
-Ushbu loyiha **MIT License** asosida tarqatilgan.  
-Batafsil ma’lumot uchun `LICENSE` faylini ko‘ring.
