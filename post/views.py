@@ -1,5 +1,7 @@
 from gc import get_objects
 
+from django.db.models import Count, Q
+
 from rest_framework import generics
 from rest_framework.permissions import AllowAny,IsAuthenticatedOrReadOnly,IsAuthenticated
 from rest_framework.response import Response
@@ -27,7 +29,7 @@ class PostCreateView(generics.CreateAPIView):
     permission_classes = [IsAuthenticated,]
 
     def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+        serializer.save(author=self.request.user)
 
 
 class PostRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
@@ -78,7 +80,7 @@ class PostCommentCreateApiView(generics.CreateAPIView):
 
     def perform_create(self, serializer):
         post_id=self.kwargs['pk']
-        serializer.save(user=self.request.user,post_id=post_id)
+        serializer.save(author=self.request.user,post_id=post_id)
 class PostCommentRetrivApiView(generics.RetrieveAPIView):
     serializer_class = PostCommentSerializers
     permission_classes = [AllowAny,]
@@ -237,6 +239,37 @@ class CommentLikeApiView(APIView):
     #             "message": f"{str(e)}"
     #         }
     #         return Response(data, status=400)
+
+
+class PostFeedView(generics.ListAPIView):
+    serializer_class = PostSerializers
+    pagination_class = CustomPagination
+    permission_classes = [AllowAny]
+
+    def get_queryset(self):
+        qs = Post.objects.annotate(
+            like_count=Count('likes')
+        )
+        if self.request.user.is_authenticated:
+            from users.models import Follow
+            following = Follow.objects.filter(
+                follower=self.request.user
+            ).values_list('following', flat=True)
+            return qs.filter(
+                Q(author_id__in=following) | Q(like_count__gte=1)
+            ).order_by('-like_count', '-created_time')
+        return qs.order_by('-like_count', '-created_time')
+
+
+class PostPopularList(generics.ListAPIView):
+    serializer_class = PostSerializers
+    permission_classes = [AllowAny]
+    pagination_class = CustomPagination
+
+    def get_queryset(self):
+        return Post.objects.annotate(
+            like_count=Count('likes')
+        ).order_by('-like_count', '-created_time')
     #
     # def delete(self, request, pk):
     #     try:

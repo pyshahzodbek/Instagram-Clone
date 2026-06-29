@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% block title %} - Qidirish{% endblock %}
+{% block content %}
+<div class="search-page">
+    <div class="search-card">
+        <div class="auth-logo" style="font-size:24px;">Qidirish</div>
+        <p class="auth-subtitle">Foydalanuvchilarni qidiring</p>
+        <div class="search-form">
+            <input type="text" id="searchInput" class="form-input" placeholder="Username, ism yoki familiya..." oninput="searchUsers(this.value)">
+        </div>
+        <div id="searchResults" class="search-results">
+            <div class="empty-state" style="border:none;padding:40px 0;">
+                <p>Qidirish uchun yuqoriga matn yozing</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

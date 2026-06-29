@@ -8,7 +8,7 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer, Toke
 from rest_framework_simplejwt.tokens import AccessToken
 
 from shared.unitily import check_email_or_phone, send_email, send_phone_code, check_auth_type
-from .models import UserConfirmation,Users,VIA_EMAIL,VIA_PHONE,CODE_VEFIRED,NEWS,DONE,PHOTO_STEP
+from .models import UserConfirmation,Users,Follow,VIA_EMAIL,VIA_PHONE,CODE_VEFIRED,NEWS,DONE,PHOTO_STEP
 from rest_framework import exceptions
 from django.db.models import Q
 from rest_framework.exceptions import ValidationError, PermissionDenied, NotFound
@@ -103,81 +103,77 @@ class SignUpSerializers(serializers.ModelSerializer):
         return data
 
 class ChangeUserInformation(serializers.Serializer):
-    first_name=serializers.CharField(write_only=True,required=True)
-    last_name=serializers.CharField(write_only=True,required=True)
-    username=serializers.CharField(write_only=True,required=True)
-    password=serializers.CharField(write_only=True,required=True)
-    confirm_password=serializers.CharField(write_only=True,required=True)
+    first_name = serializers.CharField(write_only=True, required=False)
+    last_name = serializers.CharField(write_only=True, required=False)
+    username = serializers.CharField(write_only=True, required=False)
+    password = serializers.CharField(write_only=True, required=False)
+    confirm_password = serializers.CharField(write_only=True, required=False)
+    current_password = serializers.CharField(write_only=True, required=False)
 
-    def validate(self,data):
-        password=data.get('password',None)
-        confirm_password=data.get('confirm_password',None)
+    def validate(self, data):
+        instance = self.instance
+        password = data.get('password')
+        confirm_password = data.get('confirm_password')
+        current_password = data.get('current_password')
 
-        if password!=confirm_password:
-             raise ValidationError(
-                 {
-                     "message":"Kiritgan parollaringiz bir xil emas!"
-                 }
-             )
-        if password:
-            validate_password(password)
-            validate_password(confirm_password)
+        if password or confirm_password:
+            if password != confirm_password:
+                raise ValidationError({"message": "Kiritgan parollaringiz bir xil emas!"})
+            if password:
+                validate_password(password)
+                validate_password(confirm_password)
+
+        if current_password:
+            if not instance.check_password(current_password):
+                raise ValidationError({"message": "Joriy parol noto'g'ri!"})
+        elif instance.auth_status == DONE and not password:
+            raise ValidationError({"message": "Joriy parol kiritilishi shart!"})
+
+        has_any_field = any(k in data for k in ('first_name', 'last_name', 'username', 'password'))
+        if not has_any_field and not current_password:
+            raise ValidationError({"message": "Hech qanday ma'lumot kiritilmadi!"})
 
         return data
-    def validate_username(self,username):
 
-        if len(username)<5 or len(username)>30:
+    def validate_username(self, username):
+        import re
+        if len(username) < 3 or len(username) > 30:
             raise ValidationError(
-                {
-                    "message":"Kiritgan username 5 ta belgidan kam yoki 30 ta belgidan ko'p bo'lishi mumkin emas!"
-                }
+                {"message": "Username 3 ta belgidan kam yoki 30 ta belgidan ko'p bo'lishi mumkin emas!"}
             )
-
-        if username.isdigit():
+        if not re.match(r'^[a-zA-Z0-9_]+$', username):
             raise ValidationError(
-                {
-                    "message":"Kiritilgan username faqat harflardan iborat bo'lishi kerak!"
-                }
+                {"message": "Username faqat harflar, raqamlar va pastki chiziqdan iborat bo'lishi kerak!"}
             )
+        user_id = self.instance.id if self.instance else None
+        if Users.objects.filter(username__iexact=username).exclude(id=user_id).exists():
+            raise ValidationError({"message": "Bu username allaqachon mavjud!"})
         return username
 
-
-    def validate_first_name(self,first_name):
-        if len(first_name)<5 or len(first_name)>30:
+    def validate_first_name(self, first_name):
+        if len(first_name) < 3 or len(first_name) > 30:
             raise ValidationError(
-                {
-                    "message":"Kiritilgan ism 5 ta belgidan kam yoki 30 ta belgidan ko'p bo'lishi mumkin emas!"
-                }
-            )
-        if first_name.isdigit():
-            raise ValidationError(
-                {
-                    "message":"Kiritilgan ism faqat harflardan iborat bo'lishi kerak!"
-                }
+                {"message": "Ism 3 ta belgidan kam yoki 30 ta belgidan ko'p bo'lishi mumkin emas!"}
             )
         return first_name
-    def validate_last_name(self,last_name):
-        if len(last_name)<5 or len(last_name)>30:
+
+    def validate_last_name(self, last_name):
+        if len(last_name) < 3 or len(last_name) > 30:
             raise ValidationError(
-                {
-                    "message":"Kiritilgan familiya 5 ta belgidan kam yoki 30 ta belgidan ko'p bo'lishi mumkin emas!"
-                }
-            )
-        if last_name.isdigit():
-            raise ValidationError(
-                {
-                    "message":"Kiritilgan familiya faqat harflardan iborat bo'lishi kerak!"
-                }
+                {"message": "Familiya 3 ta belgidan kam yoki 30 ta belgidan ko'p bo'lishi mumkin emas!"}
             )
         return last_name
 
     def update(self, instance, validated_data):
-        instance.first_name = validated_data.get('first_name', instance.first_name)
-        instance.last_name = validated_data.get('last_name', instance.last_name)
-        instance.username = validated_data.get('username', instance.username)
-        password=validated_data.get("password",None)
-        if validated_data.get('password'):
-            instance.set_password(validated_data.get('password'))
+        if 'first_name' in validated_data:
+            instance.first_name = validated_data['first_name']
+        if 'last_name' in validated_data:
+            instance.last_name = validated_data['last_name']
+        if 'username' in validated_data:
+            instance.username = validated_data['username']
+        password = validated_data.get('password')
+        if password:
+            instance.set_password(password)
         if instance.auth_status == CODE_VEFIRED:
             instance.auth_status = DONE
         instance.save()
@@ -245,14 +241,15 @@ class LoginSerializers(TokenObtainPairSerializer):
            raise ValidationError(data)
 
    def validate(self,data):
-       self.auth_validate(data)
-       if self.user.auth_status not in [DONE,PHOTO_STEP]:
-           raise PermissionDenied("Siz login qila olmaysiz!")
-       data=self.user.token()
-       data["auth_status"]=self.user.auth_status
-       data["full_name"]=self.user.full_name
+        self.auth_validate(data)
+        if self.user.auth_status not in [DONE,PHOTO_STEP]:
+            raise PermissionDenied("Siz login qila olmaysiz!")
+        data=self.user.token()
+        data["auth_status"]=self.user.auth_status
+        data["full_name"]=self.user.full_name
+        data["is_staff"]=self.user.is_staff
 
-       return data
+        return data
    def get_user(self,**kwargs):
        users=Users.objects.filter(**kwargs)
        if not users.exists():
@@ -325,7 +322,39 @@ class ResetPasswordSerializers(serializers.ModelSerializer):
         return instance
 
 
+class UserSearchSerializer(serializers.ModelSerializer):
+    follower_count = serializers.SerializerMethodField()
+    following_count = serializers.SerializerMethodField()
+    post_count = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Users
+        fields = ['id', 'username', 'photo', 'full_name', 'follower_count', 'following_count', 'post_count']
+
+    @staticmethod
+    def get_follower_count(obj):
+        return obj.followers.count()
+
+    @staticmethod
+    def get_following_count(obj):
+        return obj.following.count()
+
+    @staticmethod
+    def get_post_count(obj):
+        return obj.posts.count()
 
 
+class DeleteAccountSerializer(serializers.Serializer):
+    password = serializers.CharField(write_only=True, required=True)
+
+    def validate_password(self, value):
+        user = self.context['request'].user
+        if not user.check_password(value):
+            raise ValidationError({"message": "Parol noto'g'ri!"})
+        return value
 
 
+class FollowSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Follow
+        fields = ['id', 'follower', 'following', 'created_time']

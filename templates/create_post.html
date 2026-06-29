@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% block title %} - Post yaratish{% endblock %}
+{% block content %}
+<div class="auth-page">
+    <div class="auth-card" style="max-width:500px;">
+        <div class="auth-logo">Yangi post</div>
+        <p class="auth-subtitle">Rasm va sarlavha qo'shing</p>
+
+        <form id="createPostForm" onsubmit="handleCreatePost(event)">
+            <div class="form-group">
+                <div class="post-upload-preview" id="postPreview">
+                    <div class="post-upload-placeholder">
+                        <div class="post-upload-icon">📷</div>
+                        <p>Rasm tanlash uchun bosing</p>
+                    </div>
+                </div>
+                <input type="file" id="post_image" accept="image/jpeg,image/png" class="form-input-file" required>
+                <label for="post_image" class="btn btn-outline btn-full" style="cursor:pointer;margin-top:8px;">Kompyuterdan tanlash</label>
+            </div>
+            <div class="form-group">
+                <textarea id="caption" class="form-input form-textarea" placeholder="Sarlavha qo'shing..." maxlength="2000" rows="3"></textarea>
+            </div>
+            <div id="postError" class="error-msg" style="display:none;"></div>
+            <button type="submit" class="btn btn-primary btn-full" id="createPostBtn">Ulashish</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

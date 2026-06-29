@@ -1,9 +1,11 @@
 from datetime import datetime
 
 from django.core.exceptions import ObjectDoesNotExist
-from rest_framework import permissions
+from django.db.models import Q
+
+from rest_framework import permissions, generics, status
 from rest_framework.exceptions import ValidationError, NotFound
-from rest_framework.generics import CreateAPIView, UpdateAPIView
+from rest_framework.generics import CreateAPIView, UpdateAPIView, ListAPIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -13,8 +15,9 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 from shared.unitily import send_email, check_email_or_phone
 from .serializers import SignUpSerializers, ChangeUserInformation, ChangePhotoSerializers, LoginSerializers, \
-    LoginRefreshSerializers, LogoutSerializers, ForgotPasswordSerializer, ResetPasswordSerializers
-from .models import Users, NEWS, CODE_VEFIRED, VIA_EMAIL,VIA_PHONE
+    LoginRefreshSerializers, LogoutSerializers, ForgotPasswordSerializer, ResetPasswordSerializers, \
+    UserSearchSerializer, FollowSerializer, DeleteAccountSerializer
+from .models import Users, Follow, NEWS, CODE_VEFIRED, VIA_EMAIL,VIA_PHONE
 
 
 class CreateApiView(CreateAPIView):
@@ -137,6 +140,17 @@ class ChangePhotoUserView(APIView):
 class LoginVieW(TokenObtainPairView):
     serializer_class=LoginSerializers
 
+    def post(self, request, *args, **kwargs):
+        response = super().post(request, *args, **kwargs)
+        if response.status_code == 200:
+            serializer = self.get_serializer(data=request.data)
+            if serializer.is_valid():
+                user = serializer.user
+                if user.is_staff:
+                    from django.contrib.auth import login
+                    login(request, user)
+        return response
+
 class LoginRefreshView(TokenRefreshView):
     serializer_class = LoginRefreshSerializers
 
@@ -231,5 +245,111 @@ class ResetPasswordView(UpdateAPIView):
         )
 
 
+class UserSearchView(ListAPIView):
+    serializer_class = UserSearchSerializer
+    permission_classes = [AllowAny]
+
+    def get_queryset(self):
+        q = self.request.query_params.get('q', '')
+        if q:
+            return Users.objects.filter(
+                Q(username__icontains=q) |
+                Q(first_name__icontains=q) |
+                Q(last_name__icontains=q)
+            ).filter(auth_status__in=['DONE', 'PHOTO_STEP'])[:20]
+        return Users.objects.none()
 
 
+class UserDetailView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request, pk):
+        try:
+            user = Users.objects.get(id=pk, auth_status__in=['DONE', 'PHOTO_STEP'])
+        except Users.DoesNotExist:
+            raise NotFound("User not found")
+
+        serializer = UserSearchSerializer(user, context={'request': request})
+        from post.serializers import PostSerializers
+        posts = user.posts.all().order_by('-created_time')
+        post_serializer = PostSerializers(posts, many=True, context={'request': request})
+
+        is_following = False
+        if request.user.is_authenticated:
+            is_following = Follow.objects.filter(follower=request.user, following=user).exists()
+
+        return Response({
+            "user": serializer.data,
+            "posts": post_serializer.data,
+            "is_following": is_following
+        })
+
+
+class FollowToggleView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, pk):
+        try:
+            user_to_follow = Users.objects.get(id=pk)
+        except Users.DoesNotExist:
+            raise NotFound("User not found")
+
+        if request.user == user_to_follow:
+            raise ValidationError("O'zingizni kuzata olmaysiz")
+
+        follow, created = Follow.objects.get_or_create(
+            follower=request.user,
+            following=user_to_follow
+        )
+
+        if not created:
+            follow.delete()
+            return Response({"following": False}, status=200)
+
+        return Response({"following": True}, status=201)
+
+
+class FollowersListView(ListAPIView):
+    serializer_class = UserSearchSerializer
+    permission_classes = [AllowAny]
+
+    def get_queryset(self):
+        try:
+            user = Users.objects.get(id=self.kwargs['pk'])
+        except Users.DoesNotExist:
+            raise NotFound("User not found")
+        return Users.objects.filter(following__following=user).distinct()
+
+
+class FollowingListView(ListAPIView):
+    serializer_class = UserSearchSerializer
+    permission_classes = [AllowAny]
+
+    def get_queryset(self):
+        try:
+            user = Users.objects.get(id=self.kwargs['pk'])
+        except Users.DoesNotExist:
+            raise NotFound("User not found")
+        return Users.objects.filter(followers__follower=user).distinct()
+
+
+class DeleteAccountView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = DeleteAccountSerializer(data=request.data, context={'request': request})
+        serializer.is_valid(raise_exception=True)
+        user = request.user
+        user.is_active = False
+        user.save()
+        try:
+            refresh_token = request.data.get('refresh')
+            if refresh_token:
+                token = RefreshToken(refresh_token)
+                token.blacklist()
+        except Exception:
+            pass
+        return Response(
+            {"success": True, "message": "Hisob muvaffaqiyatli o'chirildi"},
+            status=status.HTTP_200_OK
+        )

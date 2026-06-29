@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% block title %} - Profil{% endblock %}
+{% block content %}
+<div class="profile-page" data-user-id="{{ user_id }}">
+    <div id="userProfileInfo" class="profile-card">
+        <div class="loading">Yuklanmoqda...</div>
+    </div>
+    <div class="profile-section">
+        <h3>Postlar</h3>
+        <div id="userPosts" class="profile-posts">
+            <div class="loading">Postlar yuklanmoqda...</div>
+        </div>
+    </div>
+</div>
+{% endblock %}

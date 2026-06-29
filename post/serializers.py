@@ -29,6 +29,7 @@ class PostSerializers(serializers.ModelSerializer):
                 'post_like_count',
                 'post_comment_count',
                 'liked_me',
+                'created_time',
                 ]
         extra_kwargs={
             'image':{'required':False},

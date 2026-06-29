@@ -1,24 +1,34 @@
-"""
-URL configuration for config project.
-
-The `urlpatterns` list routes URLs to views. For more information please see:
-    https://docs.djangoproject.com/en/5.2/topics/http/urls/
-Examples:
-Function views
-    1. Add an import:  from my_app import views
-    2. Add a URL to urlpatterns:  path('', views.home, name='home')
-Class-based views
-    1. Add an import:  from other_app.views import Home
-    2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')
-Including another URLconf
-    1. Import the include() function: from django.urls import include, path
-    2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
-"""
 from django.contrib import admin
-from django.urls import path,include
+from django.urls import path, include
+from django.conf import settings
+from django.conf.urls.static import static
+from django.views.generic import RedirectView
+from . import views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('users/',include('users.urls')),
-    path('post/',include('post.urls')),
+
+    path('', views.FeedView.as_view(), name='feed'),
+    path('login/', views.LoginView.as_view(), name='login'),
+    path('signup/', views.SignupView.as_view(), name='signup'),
+    path('verify/', views.VerifyView.as_view(), name='verify'),
+    path('complete-profile/', views.CompleteProfileView.as_view(), name='complete_profile'),
+    path('upload-photo/', views.UploadPhotoView.as_view(), name='upload_photo'),
+    path('forgot-password/', views.ForgotPasswordView.as_view(), name='forgot_password'),
+    path('reset-password/', views.ResetPasswordView.as_view(), name='reset_password'),
+    path('post/new/', views.CreatePostView.as_view(), name='create_post'),
+    path('post/<uuid:pk>/', views.PostDetailView.as_view(), name='post_detail'),
+    path('reels/', views.ExploreView.as_view(), name='explore'),
+    path('explore/', RedirectView.as_view(url='/reels/', permanent=True)),
+    path('settings/', views.SettingsView.as_view(), name='settings'),
+    path('profile/', views.ProfileView.as_view(), name='profile'),
+    path('profile/<uuid:pk>/', views.UserProfileView.as_view(), name='user_profile'),
+    path('profile/<uuid:pk>/<str:list_type>/', views.FollowersListView.as_view(), name='follow_list'),
+    path('search/', views.SearchView.as_view(), name='search'),
+
+    path('api/users/', include('users.urls')),
+    path('api/post/', include('post.urls')),
 ]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

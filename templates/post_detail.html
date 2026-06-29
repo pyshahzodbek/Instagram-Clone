@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+{% block title %} - Post{% endblock %}
+{% block content %}
+<div class="post-detail-page" data-post-id="{{ post_id }}">
+    <div id="postDetail" class="post-detail-card">
+        <div class="loading">Yuklanmoqda...</div>
+    </div>
+    <div class="comments-section">
+        <h3>Izohlar</h3>
+        <form id="commentForm" onsubmit="handleCreateComment(event, '{{ post_id }}')" class="comment-form">
+            <input type="text" id="comment_text" class="form-input" placeholder="Izoh qoldiring..." required>
+            <button type="submit" class="btn btn-primary">Yuborish</button>
+        </form>
+        <div id="commentsList" class="comments-list">
+            <div class="loading">Izohlar yuklanmoqda...</div>
+        </div>
+    </div>
+</div>
+{% endblock %}

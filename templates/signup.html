@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% block title %} - Ro'yxatdan o'tish{% endblock %}
+{% block content %}
+<div class="auth-page">
+    <div class="auth-card">
+        <div class="auth-logo">Instagram Clone</div>
+        <p class="auth-subtitle">Ro'yxatdan o'tish</p>
+
+        <form id="signupForm" onsubmit="handleSignup(event)">
+            <div class="form-group">
+                <input type="text" id="email_phone" class="form-input" placeholder="Email yoki telefon raqam" required>
+            </div>
+            <div id="signupError" class="error-msg" style="display:none;"></div>
+            <button type="submit" class="btn btn-primary btn-full" id="signupBtn">Ro'yxatdan o'tish</button>
+        </form>
+
+        <div class="auth-divider">
+            <span>yoki</span>
+        </div>
+
+        <p class="auth-footer-text">
+            Hisobingiz bormi?
+            <a href="/login/" class="auth-link">Kirish</a>
+        </p>
+    </div>
+</div>
+{% endblock %}

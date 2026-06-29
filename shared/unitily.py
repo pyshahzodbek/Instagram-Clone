@@ -77,6 +77,10 @@ class Email:
 
 
 def send_email(email, code):
+    print(f"\n{'='*50}")
+    print(f"  TASDIQLASH KODI: {code}")
+    print(f"  Yuborildi: {email}")
+    print(f"{'='*50}\n")
     html_content = render_to_string(
         'email/authentication/activate_account.html',
         {"code": code}

@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+{% block title %} - Bosh sahifa{% endblock %}
+{% block content %}
+<div class="feed-page">
+    <div class="feed-header" id="feedHeader" style="display:none;">
+        <div class="feed-user-row">
+            <div class="feed-user-avatar" id="feedUserAvatar"></div>
+            <div class="feed-user-info">
+                <span class="feed-username" id="feedUsername"></span>
+                <span class="feed-subtext">Bosh sahifa</span>
+            </div>
+        </div>
+    </div>
+    <div id="postList" class="post-list">
+        <div class="loading">Yuklanmoqda...</div>
+    </div>
+    <div class="pagination" id="pagination"></div>
+</div>
+{% endblock %}

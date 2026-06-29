@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% block title %} - Tasdiqlash{% endblock %}
+{% block content %}
+<div class="auth-page">
+    <div class="auth-card">
+        <div class="auth-logo">Instagram Clone</div>
+        <p class="auth-subtitle">Email/Telefoningizga yuborilgan <br>4 xonali kodni kiriting</p>
+
+        <form id="verifyForm" onsubmit="handleVerify(event)">
+            <div class="form-group">
+                <input type="text" id="verify_code" class="form-input" placeholder="0000" maxlength="4" pattern="[0-9]{4}" required style="text-align:center;font-size:24px;letter-spacing:8px;font-weight:600;">
+            </div>
+            <div id="verifyError" class="error-msg" style="display:none;"></div>
+            <button type="submit" class="btn btn-primary btn-full" id="verifyBtn">Tasdiqlash</button>
+        </form>
+
+        <div class="auth-links">
+            <button onclick="resendCode()" class="btn btn-text" id="resendBtn">Kodni qayta yuborish</button>
+        </div>
+    </div>
+</div>
+{% endblock %}

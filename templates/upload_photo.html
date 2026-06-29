@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% block title %} - Rasm yuklash{% endblock %}
+{% block content %}
+<div class="auth-page">
+    <div class="auth-card">
+        <div class="auth-logo">Instagram Clone</div>
+        <p class="auth-subtitle">Profil rasmingizni yuklang</p>
+
+        <form id="photoForm" onsubmit="handleUploadPhoto(event)">
+            <div class="form-group">
+                <div class="photo-preview" id="photoPreview">
+                    <div class="photo-placeholder">📷</div>
+                </div>
+                <input type="file" id="photo" accept="image/jpeg,image/png,image/heic,image/heif" class="form-input-file" required>
+                <label for="photo" class="btn btn-outline btn-full" style="cursor:pointer;">Rasm tanlash</label>
+            </div>
+            <div id="photoError" class="error-msg" style="display:none;"></div>
+            <button type="submit" class="btn btn-primary btn-full" id="photoBtn">Yuklash</button>
+        </form>
+
+        <div class="auth-links">
+            <a href="/" class="auth-link">Keyinroq</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
