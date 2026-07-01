@@ -4,17 +4,21 @@
 <div class="auth-page">
     <div class="auth-card" style="max-width:500px;">
         <div class="auth-logo">Yangi post</div>
-        <p class="auth-subtitle">Rasm va sarlavha qo'shing</p>
+        <p class="auth-subtitle">Rasm yoki video va sarlavha qo'shing</p>
 
         <form id="createPostForm" onsubmit="handleCreatePost(event)">
             <div class="form-group">
+                <div class="media-type-toggle">
+                    <button type="button" class="media-type-btn active" data-type="image" onclick="switchMediaType('image')">📷 Rasm</button>
+                    <button type="button" class="media-type-btn" data-type="video" onclick="switchMediaType('video')">🎥 Video</button>
+                </div>
                 <div class="post-upload-preview" id="postPreview">
                     <div class="post-upload-placeholder">
-                        <div class="post-upload-icon">📷</div>
-                        <p>Rasm tanlash uchun bosing</p>
+                        <div class="post-upload-icon" id="previewIcon">📷</div>
+                        <p id="previewText">Rasm tanlash uchun bosing</p>
                     </div>
                 </div>
-                <input type="file" id="post_image" accept="image/jpeg,image/png" class="form-input-file" required>
+                <input type="file" id="post_image" accept="image/jpeg,image/png,video/mp4,video/quicktime,video/x-msvideo,video/webm" class="form-input-file">
                 <label for="post_image" class="btn btn-outline btn-full" style="cursor:pointer;margin-top:8px;">Kompyuterdan tanlash</label>
             </div>
             <div class="form-group">
@@ -25,4 +29,25 @@
         </form>
     </div>
 </div>
+<script>
+let selectedMediaType = 'image';
+function switchMediaType(type) {
+    selectedMediaType = type;
+    document.querySelectorAll('.media-type-btn').forEach(b => b.classList.toggle('active', b.dataset.type === type));
+    const input = document.getElementById('post_image');
+    const icon = document.getElementById('previewIcon');
+    const text = document.getElementById('previewText');
+    if (type === 'image') {
+        input.accept = 'image/jpeg,image/png';
+        icon.textContent = '📷';
+        text.textContent = 'Rasm tanlash uchun bosing';
+    } else {
+        input.accept = 'video/mp4,video/quicktime,video/x-msvideo,video/webm';
+        icon.textContent = '🎥';
+        text.textContent = 'Video tanlash uchun bosing';
+    }
+    input.value = '';
+    document.getElementById('postPreview').innerHTML = '<div class="post-upload-placeholder"><div class="post-upload-icon" id="previewIcon">' + (type === 'image' ? '📷' : '🎥') + '</div><p id="previewText">' + (type === 'image' ? 'Rasm tanlash uchun bosing' : 'Video tanlash uchun bosing') + '</p></div>';
+}
+</script>
 {% endblock %}

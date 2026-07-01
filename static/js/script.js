@@ -391,15 +391,16 @@ document.addEventListener('change', function(e) {
     if (e.target.type === 'file' && e.target.files.length) {
         const preview = e.target.closest('.form-group')?.querySelector('.photo-preview, .post-upload-preview');
         if (preview) {
+            const file = e.target.files[0];
             const reader = new FileReader();
             reader.onload = function(ev) {
-                if (preview.classList.contains('post-upload-preview')) {
-                    preview.innerHTML = `<img src="${ev.target.result}" alt="Preview">`;
+                if (file.type.startsWith('video/')) {
+                    preview.innerHTML = `<video src="${ev.target.result}" controls style="width:100%;max-height:400px;object-fit:contain;"></video>`;
                 } else {
                     preview.innerHTML = `<img src="${ev.target.result}" alt="Preview">`;
                 }
             };
-            reader.readAsDataURL(e.target.files[0]);
+            reader.readAsDataURL(file);
         }
     }
 });
@@ -479,8 +480,16 @@ function createPostCard(post) {
 
     const authorPhoto = getImageUrl(post.author?.photo);
     const imageUrl = getImageUrl(post.image);
+    const videoUrl = post.video ? getImageUrl(post.video) : null;
 
     const profileLink = post.author?.id ? `/profile/${post.author.id}/` : '/profile/';
+
+    let mediaHtml = '';
+    if (videoUrl) {
+        mediaHtml = `<video src="${videoUrl}" class="post-image" loop muted playsinline preload="metadata"></video>`;
+    } else if (imageUrl) {
+        mediaHtml = `<img src="${imageUrl}" alt="Post" class="post-image" loading="lazy">`;
+    }
 
     card.innerHTML = `
         <div class="post-header">
@@ -491,7 +500,7 @@ function createPostCard(post) {
             </div>
             <a href="${profileLink}" class="post-username">${escapeHtml(post.author?.username || 'noma\'lum')}</a>
         </div>
-        ${imageUrl ? `<img src="${imageUrl}" alt="Post" class="post-image" loading="lazy">` : ''}
+        ${mediaHtml}
         <div class="post-actions">
             <button class="post-action-btn ${post.liked_me ? 'liked' : ''}" onclick="toggleLike('${post.id}', this)">
                 ${post.liked_me ? '❤️' : '🤍'}
@@ -593,6 +602,14 @@ async function loadPostDetail() {
 
         const authorPhoto = getImageUrl(post.author?.photo);
         const imageUrl = getImageUrl(post.image);
+        const videoUrl = post.video ? getImageUrl(post.video) : null;
+
+        let mediaHtml = '';
+        if (videoUrl) {
+            mediaHtml = `<video src="${videoUrl}" controls class="post-detail-image"></video>`;
+        } else if (imageUrl) {
+            mediaHtml = `<img src="${imageUrl}" alt="Post" class="post-detail-image">`;
+        }
 
         container.innerHTML = `
             <div class="post-card">
@@ -604,7 +621,7 @@ async function loadPostDetail() {
                     </div>
                     <a href="/profile/${post.author?.id || ''}/" class="post-username">${escapeHtml(post.author?.username || 'noma\'lum')}</a>
                 </div>
-                ${imageUrl ? `<img src="${imageUrl}" alt="Post" class="post-detail-image">` : ''}
+                ${mediaHtml}
                 <div class="post-actions">
                     <button class="post-action-btn ${post.liked_me ? 'liked' : ''}" onclick="toggleLike('${post.id}', this)">
                         ${post.liked_me ? '❤️' : '🤍'}
@@ -769,14 +786,20 @@ async function handleCreatePost(e) {
 
     const fileInput = document.getElementById('post_image');
     if (!fileInput.files.length) {
-        showError('postError', 'Rasm tanlang');
+        showError('postError', 'Rasm yoki video tanlang');
         btn.disabled = false;
         btn.textContent = 'Post qilish';
         return;
     }
 
     const formData = new FormData();
-    formData.append('image', fileInput.files[0]);
+    const file = fileInput.files[0];
+    const isVideo = file.type.startsWith('video/');
+    if (isVideo) {
+        formData.append('video', file);
+    } else {
+        formData.append('image', file);
+    }
     const caption = document.getElementById('caption').value.trim();
     if (caption) {
         formData.append('caption', caption);
@@ -789,7 +812,8 @@ async function handleCreatePost(e) {
         });
         if (!res.ok) {
             const data = await res.json();
-            showError('postError', data.image?.[0] || data.caption?.[0] || data.error || 'Xatolik yuz berdi');
+            const errMsg = data.image?.[0] || data.video?.[0] || data.caption?.[0] || data.media?.[0] || data.error || 'Xatolik yuz berdi';
+            showError('postError', errMsg);
             btn.disabled = false;
             btn.textContent = 'Post qilish';
             return;
@@ -1108,12 +1132,16 @@ async function loadExplore(page = 1) {
         container.innerHTML = '';
         for (const post of posts) {
             const imgUrl = getImageUrl(post.image);
-            if (!imgUrl) continue;
+            const videoUrl = post.video ? getImageUrl(post.video) : null;
+            if (!imgUrl && !videoUrl) continue;
             const item = document.createElement('a');
             item.href = `/post/${post.id}/`;
             item.className = 'explore-grid-item';
+            const thumbnailUrl = imgUrl || videoUrl;
+            const isVideo = !!videoUrl;
             item.innerHTML = `
-                <img src="${imgUrl}" alt="Post" loading="lazy">
+                ${isVideo ? '<div class="explore-video-badge">🎥</div>' : ''}
+                <img src="${thumbnailUrl}" alt="Post" loading="lazy">
                 <div class="explore-grid-overlay">
                     <span class="explore-overlay-stat">❤️ ${post.post_like_count || 0}</span>
                     <span class="explore-overlay-stat">💬 ${post.post_comment_count || 0}</span>

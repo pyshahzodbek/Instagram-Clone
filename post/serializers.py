@@ -20,11 +20,14 @@ class PostSerializers(serializers.ModelSerializer):
     post_like_count=serializers.SerializerMethodField("get_like_count")
     post_comment_count=serializers.SerializerMethodField("get_comment_count")
     liked_me=serializers.SerializerMethodField("get_liked_me")
+    is_video=serializers.SerializerMethodField("get_is_video")
     class Meta:
         model=Post
         fields=['id',
                 'author',
                 'image',
+                'video',
+                'is_video',
                 'caption',
                 'post_like_count',
                 'post_comment_count',
@@ -33,7 +36,12 @@ class PostSerializers(serializers.ModelSerializer):
                 ]
         extra_kwargs={
             'image':{'required':False},
+            'video':{'required':False},
         }
+    def validate(self, attrs):
+        if not attrs.get('image') and not attrs.get('video') and not self.instance:
+            raise serializers.ValidationError({"media": "Rasm yoki video yuklash majburiy"})
+        return attrs
     @staticmethod
     def get_like_count(obj):
         return obj.likes.count()
@@ -49,6 +57,9 @@ class PostSerializers(serializers.ModelSerializer):
             except PostLike.DoesNotExist:
                 return False
         return False
+    @staticmethod
+    def get_is_video(obj):
+        return bool(obj.video)
 
 class PostCommentSerializers(serializers.ModelSerializer):
     id= serializers.UUIDField(read_only=True)

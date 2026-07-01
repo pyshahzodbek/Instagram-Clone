@@ -16,7 +16,17 @@ class Post(BaseModels):
                             'png'
                             ]
         )
-    ])
+    ], null=True, blank=True)
+    video=models.FileField(
+        upload_to='post_video/',
+        validators=[FileExtensionValidator(
+        allowed_extensions=['mp4',
+                            'mov',
+                            'avi',
+                            'webm'
+                            ]
+        )
+    ], null=True, blank=True)
     caption=models.TextField(validators=[MaxLengthValidator(2000)])
     class Meta:
         db_table='posts'
